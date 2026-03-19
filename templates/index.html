@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MovieMatch | Movie Recommender</title>
+    <style>
+        :root {
+            --bg-1: #0f172a;
+            --bg-2: #111827;
+            --panel: rgba(255, 255, 255, 0.08);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --soft: #94a3b8;
+            --accent: #7c3aed;
+            --accent-2: #22c55e;
+            --danger: #ef4444;
+            --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            --radius: 22px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(124, 58, 237, 0.28), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.20), transparent 28%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 40px 0 60px;
+        }
+
+        .hero {
+            display: grid;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--panel-border);
+            color: var(--muted);
+            font-size: 0.92rem;
+            backdrop-filter: blur(12px);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 4.25rem);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 760px;
+            color: var(--muted);
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
+        }
+
+        .search-panel {
+            padding: 28px;
+        }
+
+        .panel-title {
+            margin: 0 0 8px;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .panel-text {
+            margin: 0 0 22px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .search-wrap {
+            position: relative;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .movie-input {
+            width: 100%;
+            padding: 16px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: 0.2s ease;
+        }
+
+        .movie-input::placeholder {
+            color: #b6c2d3;
+        }
+
+        .movie-input:focus {
+            border-color: rgba(124, 58, 237, 0.7);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+            background: rgba(255, 255, 255, 0.11);
+        }
+
+        .btn {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-radius: 16px;
+            padding: 16px 22px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, var(--accent), #5b21b6);
+            transition: transform 0.18s ease, opacity 0.18s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            display: none;
+            z-index: 20;
+        }
+
+        .suggestion-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            color: var(--text);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.18s ease;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(124, 58, 237, 0.16);
+        }
+
+        .helper-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .helper-text {
+            color: var(--soft);
+            font-size: 0.95rem;
+        }
+
+        .status {
+            margin-top: 20px;
+            min-height: 24px;
+            font-size: 0.98rem;
+            color: var(--muted);
+        }
+
+        .status.error {
+            color: #fecaca;
+        }
+
+        .status.success {
+            color: #bbf7d0;
+        }
+
+        .side-panel {
+            padding: 28px;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .feature-item {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .feature-item strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 1rem;
+        }
+
+        .feature-item span {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 0.96rem;
+        }
+
+        .results-section {
+            margin-top: 28px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 16px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .results-title {
+            margin: 0;
+            font-size: 1.55rem;
+        }
+
+        .results-subtitle {
+            color: var(--muted);
+            margin: 6px 0 0;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat( auto-fit, minmax(240px, 1fr) );
+            gap: 18px;
+        }
+
+        .movie-card {
+            padding: 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(12px);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(124, 58, 237, 0.45);
+        }
+
+        .movie-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            background: rgba(124, 58, 237, 0.18);
+            color: #ddd6fe;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .movie-title {
+            margin: 0 0 14px;
+            font-size: 1.08rem;
+            line-height: 1.45;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .bar {
+            height: 10px;
+            width: 100%;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .distance-label {
+            margin-top: 10px;
+            color: var(--soft);
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            padding: 26px;
+            border-radius: 20px;
+            text-align: center;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            color: var(--soft);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loading::before {
+            content: "";
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.25);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 920px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="hero">
+            <div class="badge">🎬 Smart movie recommendations, minus the endless scrolling crisis</div>
+            <h1>Find Your Next Favorite Movie</h1>
+            <p>
+                Type a movie you already like, pick it from the suggestions, and get
+                five similar movie recommendations instantly.
+                Built using data from 25,506,872 votes across 2,500 movies.
+            </p>
+        </section>
+
+        <section class="layout">
+            <div class="panel search-panel">
+                <h2 class="panel-title">Search a movie</h2>
+                <p class="panel-text">
+                    Enter a movie title and let the recommendation engine suggest
+                    similar films based on learned patterns.
+                </p>
+
+                <div class="search-wrap">
+                    <div class="input-group">
+                        <input
+                            id="movieInput"
+                            class="movie-input"
+                            type="text"
+                            placeholder="Start typing a movie title..."
+                            autocomplete="off"
+                        />
+                        <button id="recommendBtn" class="btn">Get Recommendations</button>
+                    </div>
+                    <div id="suggestions" class="suggestions"></div>
+                </div>
+
+                <div class="helper-row">
+                    <div class="helper-text">
+                        Tip: choose a title from the dropdown for the best match.
+                    </div>
+                </div>
+
+                <div id="status" class="status"></div>
+            </div>
+
+            <div class="panel side-panel">
+                <h2 class="panel-title">How it works</h2>
+                <p class="panel-text">
+                    The system compares your selected movie with the dataset and
+                    returns the closest matches.
+                </p>
+
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <strong>Fast search</strong>
+                        <span>Live title suggestions appear as the user types.</span>
+                    </div>
+                    <div class="feature-item">
+                        <strong>5 recommendations</strong>
+                        <span>Exactly five similar movies are returned for each selected title.</span>
+                    </div>
+                    <div class="feature-item">
+                        <strong>Similarity visualization</strong>
+                        <span>Each recommendation includes a visual similarity score and raw distance value.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="results-section">
+            <div class="results-header">
+                <div>
+                    <h2 class="results-title">Recommendations</h2>
+                    <p id="resultsSubtitle" class="results-subtitle">
+                        Your results will appear here.
+                    </p>
+                </div>
+            </div>
+
+            <div id="resultsContainer" class="results-grid">
+                <div class="empty-state">
+                    No recommendations yet. Search for a movie and press
+                    <strong>Get Recommendations</strong>.
+                </div>
+            </div>
+
+            <div class="footer-note">
+                Note: a lower distance usually means a stronger match. The similarity bar below is a visual interpretation of that distance.
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const movieInput = document.getElementById("movieInput");
+        const recommendBtn = document.getElementById("recommendBtn");
+        const suggestionsBox = document.getElementById("suggestions");
+        const statusBox = document.getElementById("status");
+        const resultsContainer = document.getElementById("resultsContainer");
+        const resultsSubtitle = document.getElementById("resultsSubtitle");
+
+        let debounceTimer = null;
+
+        function setStatus(message = "", type = "") {
+            statusBox.textContent = message;
+            statusBox.className = "status";
+            if (type) statusBox.classList.add(type);
+        }
+
+        function showSuggestions(items) {
+            suggestionsBox.innerHTML = "";
+
+            if (!items || items.length === 0) {
+                suggestionsBox.style.display = "none";
+                return;
+            }
+
+            items.forEach(title => {
+                const item = document.createElement("div");
+                item.className = "suggestion-item";
+                item.textContent = title;
+                item.addEventListener("click", () => {
+                    movieInput.value = title;
+                    suggestionsBox.style.display = "none";
+                    setStatus(`Selected: ${title}`, "success");
+                });
+                suggestionsBox.appendChild(item);
+            });
+
+            suggestionsBox.style.display = "block";
+        }
+
+        async function searchMovies(query) {
+            try {
+                const response = await fetch(`/search-movies?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                showSuggestions(data.matches || []);
+            } catch (error) {
+                suggestionsBox.style.display = "none";
+            }
+        }
+
+        function distanceToSimilarity(distance) {
+            // Lower distance = more similar.
+            // This converts distance into a friendly 0-100 score.
+            const similarity = Math.max(0, Math.min(100, (1 - Number(distance)) * 100));
+            return similarity.toFixed(1);
+        }
+
+        function createMovieCard(title, distance, index) {
+            const similarity = distanceToSimilarity(distance);
+
+            return `
+                <article class="movie-card">
+                    <div class="movie-rank">#${index + 1}</div>
+                    <h3 class="movie-title">${title}</h3>
+                    <div class="score-row">
+                        <span>Similarity</span>
+                        <strong>${similarity}%</strong>
+                    </div>
+                    <div class="bar">
+                        <div class="bar-fill" style="width: ${similarity}%;"></div>
+                    </div>
+                    <div class="distance-label">Distance: ${Number(distance).toFixed(4)}</div>
+                </article>
+            `;
+        }
+
+        async function getRecommendations() {
+            const selectedMovie = movieInput.value.trim();
+
+            if (!selectedMovie) {
+                setStatus("Please enter a movie title first.", "error");
+                return;
+            }
+
+            recommendBtn.disabled = true;
+            recommendBtn.innerHTML = `<span class="loading">Loading</span>`;
+            setStatus("Finding the best matches for your movie...");
+            suggestionsBox.style.display = "none";
+
+            resultsContainer.innerHTML = `
+                <div class="empty-state">
+                    Searching for recommendations...
+                </div>
+            `;
+
+            try {
+                const response = await fetch("/recommend", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ name: selectedMovie })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Request failed");
+                }
+
+                const data = await response.json();
+                const recommendations = data.recommendations || [];
+
+                if (recommendations.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="empty-state">
+                            No recommendations were found for <strong>${selectedMovie}</strong>.
+                        </div>
+                    `;
+                    resultsSubtitle.textContent = `No results found for "${selectedMovie}".`;
+                    setStatus("No similar movies found.", "error");
+                    return;
+                }
+
+                resultsContainer.innerHTML = recommendations
+                    .map((item, index) => createMovieCard(item[0], item[1], index))
+                    .join("");
+
+                resultsSubtitle.textContent = `Showing 5 recommendations based on "${selectedMovie}".`;
+                setStatus("Recommendations loaded successfully.", "success");
+            } catch (error) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        Something went wrong while loading recommendations.
+                    </div>
+                `;
+                resultsSubtitle.textContent = "Could not load recommendations.";
+                setStatus("An error occurred. Please make sure the movie title exists in your dataset.", "error");
+            } finally {
+                recommendBtn.disabled = false;
+                recommendBtn.textContent = "Get Recommendations";
+            }
+        }
+
+        movieInput.addEventListener("input", (e) => {
+            const query = e.target.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            if (!query) {
+                suggestionsBox.style.display = "none";
+                setStatus("");
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                searchMovies(query);
+            }, 250);
+        });
+
+        movieInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                getRecommendations();
+            }
+        });
+
+        recommendBtn.addEventListener("click", getRecommendations);
+
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".search-wrap")) {
+                suggestionsBox.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>

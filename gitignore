@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+.env.*
+
+# Build / cache
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# Large ML artifacts
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+
+# MovieLens raw data
+ml-32m/
+ml-32m.zip
+
+# Optional: keep if you want to track a specific model file manually
+# !recommender_data.pkl

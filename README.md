@@ -12,6 +12,12 @@ You can search for a movie title, choose one from the suggestions, and get **5 s
 - FastAPI backend
 - HTML/CSS/JavaScript frontend
 
+## Demo
+
+Here is a quick preview of the application:
+
+![Movie Recommender Demo](assets/demo.png)
+
 ## Project Structure
 
 ```text
